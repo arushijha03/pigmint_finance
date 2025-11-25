@@ -1,0 +1,85 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: pigmint-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pigmint_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pigmint_pgdata:/var/lib/postgresql/data
+      - ./db_schema.sql:/docker-entrypoint-initdb.d/db_schema.sql:ro
+    networks:
+      - pigmint-net
+
+  redis:
+    image: redis:7
+    container_name: pigmint-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - pigmint-net
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+    container_name: pigmint-api-gateway
+    restart: unless-stopped
+    depends_on:
+      - db
+      - redis
+    environment:
+      # --- GCP / PubSub ---
+      PROJECT_ID: ${PROJECT_ID}
+      TRANSACTIONS_TOPIC: ${TRANSACTIONS_TOPIC}
+      GOOGLE_APPLICATION_CREDENTIALS: /secrets/gcp-key.json
+
+      # --- DB ---
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: pigmint_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+
+      # --- Redis ---
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      # --- Analytics service base URL (internal) ---
+      ANALYTICS_BASE_URL: http://analytics-service:8080
+    ports:
+      - "8080:8080"   # frontend will hit http://localhost:8080
+    volumes:
+      - ./pigmint-finance-2852a2f7b3b4.json:/secrets/gcp-key.json:ro
+    networks:
+      - pigmint-net
+
+  event-processor:
+    build:
+      context: ./event-processor
+    container_name: pigmint-event-processor
+    restart: unless-stopped
+    depends_on:
+      - db
+      - redis
+    environment:
+      # --- DB ---
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: pigmint_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+
+      # --- Redis ---
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      # No Pub/Sub here: this service is only a subscriber (HTTP push) in cloud.
+    ports:
+      - "

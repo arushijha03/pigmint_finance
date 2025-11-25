@@ -1,0 +1,80 @@
+# API Gateway Configuration File (using OpenAPI Specification v2.0)
+#
+# **FIXED:** Removed the 'host' field and the 'jwt_locations' field,
+# which was causing an INVALID_ARGUMENT error.
+# The API Gateway will now use the standard method of authenticating
+# to Cloud Run via the Authorization: Bearer header.
+
+swagger: "2.0"
+info:
+  title: "pigmint-ingestion-api"
+  version: "1.0.0"
+schemes:
+  - "https"
+consumes:
+  - "application/json"
+produces:
+  - "application/json"
+
+paths:
+  /transactions:
+    post:
+      summary: "Processes incoming transaction data"
+      operationId: "processTransaction"
+      parameters:
+        - name: "transactionData"
+          in: "body"
+          description: "Transaction data including type, amount, and source."
+          required: true
+          schema:
+            type: "object"
+            properties:
+              transaction_id:
+                type: "string"
+                description: "Unique identifier for the transaction."
+              amount:
+                type: "number"
+                format: "float"
+                description: "Transaction amount."
+              type:
+                type: "string"
+                description: "e.g., 'DEPOSIT', 'WITHDRAWAL'."
+                enum:
+                  - "DEPOSIT"
+                  - "WITHDRAWAL"
+              source:
+                type: "string"
+                description: "Source identifier for the transaction."
+            required:
+              - transaction_id
+              - amount
+              - type
+              - source
+      responses:
+        "200":
+          description: "Transaction successfully queued for processing."
+          schema:
+            type: "object"
+            properties:
+              status:
+                type: "string"
+                example: "queued"
+              transaction_id:
+                type: "string"
+        "500":
+          description: "Internal Server Error or Processing Failure."
+          schema:
+            type: "object"
+            properties:
+              error:
+                type: "string"
+                example: "Failed to connect to backend service."
+
+      # CRITICAL: x-google-backend extension for Cloud Run Authentication
+      # This simplified block is the correct configuration:
+      # API Gateway uses the 'address' as the target and 'jwt_audience'
+      # to generate a token and place it in the Authorization header.
+      x-google-backend:
+        address: https://event-processor-295058901595.us-central1.run.app
+        # This is the Cloud Run URL (the audience for the generated JWT)
+        jwt_audience: https://event-processor-295058901595.us-central1.run.app

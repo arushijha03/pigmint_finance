@@ -1,0 +1,66 @@
+swagger: '2.0'
+# CRITICAL: This host defines the name of your Cloud Endpoints service.
+# Replace <YOUR_PROJECT_ID> with your actual GCP project ID (e.g., pigmint-finance)
+host: pigmint-ingestion-api.endpoints.pigmint-finance.cloud.goog
+info:
+  title: Pigmint Transaction Ingestion API
+  description: API Gateway for secure transaction ingestion and processing.
+  version: 1.0.0
+schemes:
+  - https
+produces:
+  - application/json
+securityDefinitions:
+  # Defines the key requirement parameter: 'key' in the query string
+  api_key:
+    type: "apiKey"
+    name: "key"
+    in: "query"
+paths:
+  /transactions:
+    post:
+      summary: Ingest a new transaction event
+      operationId: ingestTransaction
+      
+      # Defines the expected JSON body for the POST request
+      parameters:
+        - in: body
+          name: transactionData
+          description: Transaction details to be processed by the backend.
+          required: true
+          schema:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+                description: ISO 8601 timestamp of the transaction.
+              amount:
+                type: number
+                format: float
+                description: The monetary value of the transaction.
+              currency:
+                type: string
+                description: ISO 4217 currency code (e.g., USD, EUR).
+              source:
+                type: string
+                description: System or device generating the transaction (e.g., 'mobile', 'web').
+            required:
+              - timestamp
+              - amount
+              - currency
+              - source
+              
+      x-google-backend:
+        # This is the Cloud Run service URL that will receive the request
+        address: https://event-processor-295058901595.us-central1.run.app
+        protocol: h2
+      security:
+        - api_key: [] # Enforces that a valid 'key' parameter must be present
+      responses:
+        '200':
+          description: Transaction accepted
+        '400':
+          description: Invalid request body or data format.
+        '401':
+          description: Unauthorized - Invalid API Key

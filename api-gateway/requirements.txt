@@ -1,0 +1,8 @@
+Flask
+google-cloud-pubsub
+psycopg2-binary
+redis
+gunicorn
+python-dotenv
+requests
+flask-cors
