@@ -1,4 +1,4 @@
-# 🐷 **PigMint Finance**
+# **PigMint Finance**
 
 ### *Smart Micro-Savings, Spending Insights & Financial Recommendations*
 
@@ -6,7 +6,7 @@
 
 ---
 
-## 📌 **Overview**
+## **Overview**
 
 PigMint Finance is a modern financial automation system that analyzes user transactions, applies micro-saving rules (such as round-ups), tracks progress toward savings goals, and generates smart, deterministic recommendations based on spending patterns.
 
@@ -27,7 +27,7 @@ PigMint is fully containerized, scalable, and wired for private communication be
 
 ---
 
-## 🧱 **System Architecture**
+## **System Architecture**
 
 ```
    ┌────────────────────────┐       ┌──────────────────────────────────┐
@@ -67,7 +67,7 @@ PigMint is fully containerized, scalable, and wired for private communication be
 
 ---
 
-## 🧩 **Microservices**
+## **Microservices**
 
 PigMint has **three backend microservices**, each deployed to **Cloud Run** with private networking:
 
@@ -113,7 +113,7 @@ Provides:
 
 ---
 
-## 📡 **Pub/Sub Messaging**
+## **Pub/Sub Messaging**
 
 ### **Topic**
 
@@ -135,7 +135,7 @@ https://pigmint-event-processor-ugzdkpfc7q-uc.a.run.app/internal/pubsub/transact
 
 ---
 
-## 🗄️ **Database (Cloud SQL - PostgreSQL)**
+## **Database (Cloud SQL - PostgreSQL)**
 
 **Instance:** `pigmint-db`
 **Private IP:** `10.102.0.3`
@@ -156,7 +156,7 @@ Stores all financial history, rule states, goals, and aggregated savings.
 
 ---
 
-## ⚡ **Redis Memorystore**
+## **Redis Memorystore**
 
 **Instance:** `pigmint-redis-cache`
 **Private IP:** `10.0.148.19`
@@ -168,7 +168,7 @@ Used for:
 
 ---
 
-## 🔌 **VPC Connector**
+## **VPC Connector**
 
 All private services use:
 
@@ -186,7 +186,7 @@ This allows Cloud Run → Cloud SQL → Redis communication purely over **intern
 
 ---
 
-## 🌐 **Frontend Application**
+## **Frontend Application**
 
 You have built a custom frontend using:
 
@@ -212,7 +212,7 @@ VITE_PIGMINT_API_BASE_URL=https://pigmint-api-gateway-ugzdkpfc7q-uc.a.run.app
 
 ---
 
-## 🧠 **Recommendation Logic**
+## **Recommendation Logic**
 
 Currently the Event Processor generates **4 deterministic recommendations**:
 
@@ -235,7 +235,7 @@ GET /api/dashboard/overview
 
 ---
 
-## 🛠️ **Local Development**
+## **Local Development**
 
 You can run each service locally via Docker:
 
@@ -254,7 +254,7 @@ if not using Gunicorn.
 
 ---
 
-## 🚀 Deployment Structure
+## Deployment Structure
 
 You deploy using a script such as:
 
@@ -279,7 +279,7 @@ pigmint-down.ps1
 
 ---
 
-## 🔮 Future Enhancements
+## Future Enhancements
 
 * Additional savings rules
 * ML-based recommendations
