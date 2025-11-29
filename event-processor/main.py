@@ -14,9 +14,6 @@ logger = logging.getLogger("event-processor")
 
 app = Flask(__name__)
 
-# ---------------------------------------------------------------------
-# CONFIG
-# ---------------------------------------------------------------------
 
 DB_HOST = os.environ.get("DB_HOST", "localhost")
 DB_PORT = int(os.environ.get("DB_PORT", 5432))
@@ -53,9 +50,6 @@ def get_redis():
     return _redis_client
 
 
-# ---------------------------------------------------------------------
-# HEALTH CHECK
-# ---------------------------------------------------------------------
 
 @app.route("/ready", methods=["GET"])
 def ready():
@@ -68,9 +62,6 @@ def ready():
     return "OK", 200
 
 
-# ---------------------------------------------------------------------
-# PUB/SUB PUSH HANDLER
-# ---------------------------------------------------------------------
 
 @app.route("/internal/pubsub/transactions", methods=["POST"])
 def handle_pubsub_transaction():
@@ -109,9 +100,6 @@ def handle_pubsub_transaction():
         return "Internal Server Error", 500
 
 
-# ---------------------------------------------------------------------
-# CORE PIPELINE: transaction + rules + recommendations
-# ---------------------------------------------------------------------
 
 def process_transaction_event(tx: dict):
     """
@@ -166,8 +154,6 @@ def process_transaction_event(tx: dict):
             insert_savings_ledger(cur, user_id, tx_id, "roundup", ru_amount)
             total_saved_this_tx += ru_amount
 
-    # (You can add more rules here later, e.g. coffee_savings etc.)
-
     # 4. Update aggregates (users.total_saved & goals.current_amount)
     if total_saved_this_tx > 0:
         cur.execute(
@@ -178,7 +164,7 @@ def process_transaction_event(tx: dict):
             """,
             (total_saved_this_tx, user_id),
         )
-        # For now: apply all savings to first goal if exists
+        
         cur.execute(
             """
             SELECT id FROM goals WHERE user_id = %s ORDER BY created_at ASC LIMIT 1;
@@ -196,7 +182,7 @@ def process_transaction_event(tx: dict):
                 """,
                 (total_saved_this_tx, goal_id),
             )
-            # optional: goal_progress insertion
+            
             cur.execute(
                 """
                 INSERT INTO goal_progress (goal_id, transaction_id, amount_added, created_at)
@@ -205,7 +191,7 @@ def process_transaction_event(tx: dict):
                 (goal_id, tx_id, total_saved_this_tx),
             )
 
-    # 5. Generate deterministic recommendation
+    # 5. Generate recommendation
     generate_recommendation(cur, user_id)
 
     conn.commit()
@@ -277,7 +263,7 @@ def generate_recommendation(cur, user_id: str):
     Rule 4 (Many small transactions):
       - If more than 20 transactions this month AND average transaction < 10 -> suggest consolidating small purchases.
     """
-    # total / per-category spending and transaction count this month
+    
     cur.execute(
         """
         WITH this_month AS (
@@ -311,9 +297,7 @@ def generate_recommendation(cur, user_id: str):
     other_share = other_spend / total_spend
     avg_amount = total_spend / tx_count
 
-    # ------------------------------------------------------------------
-    # Rule 1: Dining share high (> 30% of total)
-    # ------------------------------------------------------------------
+
     if restaurants_share > 0.3:
         title = "Dining above recommended level"
         message = (
@@ -330,9 +314,7 @@ def generate_recommendation(cur, user_id: str):
             (user_id, title, message, category),
         )
 
-    # ------------------------------------------------------------------
-    # Rule 2: Groceries too low while dining is high
-    # ------------------------------------------------------------------
+
     if restaurants_share > 0.3 and groceries_share < 0.1:
         title = "Consider shifting spend to groceries"
         message = (
@@ -350,9 +332,7 @@ def generate_recommendation(cur, user_id: str):
             (user_id, title, message, category),
         )
 
-    # ------------------------------------------------------------------
-    # Rule 3: Other / uncategorized spending high
-    # ------------------------------------------------------------------
+
     if other_share > 0.4:
         title = "High discretionary / uncategorized spending"
         message = (
@@ -369,9 +349,6 @@ def generate_recommendation(cur, user_id: str):
             (user_id, title, message, category),
         )
 
-    # ------------------------------------------------------------------
-    # Rule 4: Many small transactions
-    # ------------------------------------------------------------------
     if tx_count > 20 and avg_amount < 10.0:
         title = "Many small purchases detected"
         message = (
