@@ -10,12 +10,9 @@ import psycopg2
 import redis
 from flask_cors import CORS 
 
-# ---------------------------------------------------------------------
-# CONFIG
-# ---------------------------------------------------------------------
 
 PROJECT_ID = os.environ.get("PROJECT_ID")
-TRANSACTIONS_TOPIC = os.environ.get("TRANSACTIONS_TOPIC")  # e.g. "transactions.raw"
+TRANSACTIONS_TOPIC = os.environ.get("TRANSACTIONS_TOPIC")  
 
 DB_HOST = os.environ.get("DB_HOST", "localhost")
 DB_PORT = int(os.environ.get("DB_PORT", 5432))
@@ -26,7 +23,7 @@ DB_PASSWORD = os.environ.get("DB_PASSWORD", "")
 REDIS_HOST = os.environ.get("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.environ.get("REDIS_PORT", 6379))
 
-DEMO_USER_ID = "demo_user"  # single user for now
+DEMO_USER_ID = "demo_user" 
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("api-gateway")
@@ -35,12 +32,9 @@ load_dotenv()
 app = Flask(__name__)
 CORS(
     app,
-    resources={r"/api/*": {"origins": "*"}},  # allow all origins for /api/*
+    resources={r"/api/*": {"origins": "*"}},  
     supports_credentials=False,
 )
-# ---------------------------------------------------------------------
-# CONNECTION HELPERS
-# ---------------------------------------------------------------------
 
 _pubsub_publisher = None
 _pubsub_topic_path = None
@@ -57,7 +51,7 @@ def get_pubsub_publisher():
         logger.info(f"Pub/Sub publisher initialized for topic {_pubsub_topic_path}")
     return _pubsub_publisher, _pubsub_topic_path
 
-#remove
+
 import os
 
 print("ENV DEBUG:", {
@@ -94,11 +88,6 @@ def get_redis():
         )
     return _redis_client
 
-
-# ---------------------------------------------------------------------
-# HEALTH CHECK
-# ---------------------------------------------------------------------
-
 @app.route("/ready", methods=["GET"])
 def ready():
     """
@@ -110,9 +99,6 @@ def ready():
     return "OK", 200
 
 
-# ---------------------------------------------------------------------
-# AUTH / USER (hardcoded demo)
-# ---------------------------------------------------------------------
 
 @app.route("/api/me", methods=["GET"])
 def get_me():
@@ -122,8 +108,7 @@ def get_me():
     TOPIC/SUB: none
     DB TABLES (read): users (optional)
     """
-    # For now just return a demo user payload.
-    # Later you can fetch from users table.
+    
     return jsonify(
         {
             "user_id": DEMO_USER_ID,
@@ -149,10 +134,6 @@ def _get_user_total_saved(user_id: str) -> float:
         logger.error(f"Error reading total_saved for {user_id}: {e}")
     return 0.0
 
-
-# ---------------------------------------------------------------------
-# TRANSACTION SIMULATOR - publish to Pub/Sub
-# ---------------------------------------------------------------------
 
 @app.route("/api/transactions/simulate", methods=["POST"])
 def simulate_transaction():
@@ -194,10 +175,6 @@ def simulate_transaction():
         return jsonify({"error": str(e)}), 500
 
 
-# ---------------------------------------------------------------------
-# TRANSACTION FEED
-# ---------------------------------------------------------------------
-
 @app.route("/api/transactions/recent", methods=["GET"])
 def get_recent_transactions():
     """
@@ -210,7 +187,7 @@ def get_recent_transactions():
     limit = int(request.args.get("limit", 20))
     conn = get_db_conn()
     cur = conn.cursor()
-    # Simple join: show transaction + sum of savings actions related
+
     cur.execute(
         """
         SELECT t.id, t.amount, t.currency, t.merchant, t.category_normalized,
@@ -245,9 +222,6 @@ def get_recent_transactions():
     return jsonify({"transactions": txs})
 
 
-# ---------------------------------------------------------------------
-# GOALS
-# ---------------------------------------------------------------------
 
 @app.route("/api/goals", methods=["GET"])
 def get_goals():
@@ -319,9 +293,6 @@ def create_goal():
     return jsonify({"goal_id": goal_id, "status": "created"}), 201
 
 
-# ---------------------------------------------------------------------
-# RULES (Round-up toggler)
-# ---------------------------------------------------------------------
 
 @app.route("/api/rules", methods=["GET"])
 def get_rules():
@@ -372,7 +343,6 @@ def toggle_roundup():
 
     conn = get_db_conn()
     cur = conn.cursor()
-    # upsert like logic for rule 'roundup'
     cur.execute(
         """
         INSERT INTO rules (user_id, name, is_active, config, updated_at)
@@ -386,16 +356,13 @@ def toggle_roundup():
     cur.close()
     conn.close()
 
-    # update Redis cache
+   
     r = get_redis()
-    r.delete(f"rules:{DEMO_USER_ID}")  # force refresh next read
+    r.delete(f"rules:{DEMO_USER_ID}")  
 
     return jsonify({"rule": "roundup", "enabled": bool(enabled)}), 200
 
 
-# ---------------------------------------------------------------------
-# RECOMMENDATIONS
-# ---------------------------------------------------------------------
 
 @app.route("/api/recommendations/latest", methods=["GET"])
 def latest_recommendation():
@@ -434,9 +401,6 @@ def latest_recommendation():
     return jsonify({"recommendation": rec})
 
 
-# ---------------------------------------------------------------------
-# DASHBOARD OVERVIEW
-# ---------------------------------------------------------------------
 
 @app.route("/api/dashboard/overview", methods=["GET"])
 def dashboard_overview():
@@ -449,7 +413,6 @@ def dashboard_overview():
     """
     total_saved = _get_user_total_saved(DEMO_USER_ID)
 
-    # goals
     conn = get_db_conn()
     cur = conn.cursor()
     cur.execute(
@@ -472,7 +435,7 @@ def dashboard_overview():
             }
         )
 
-    # latest recommendation
+
     cur.execute(
         """
         SELECT title, message, category, created_at
@@ -496,8 +459,6 @@ def dashboard_overview():
             "created_at": rec_row[3].isoformat() if rec_row[3] else None,
         }
 
-    # NOTE: category spend will come from analytics_service; for now just placeholder.
-    # Frontend can call /api/spend/categories separately.
 
     return jsonify(
         {
@@ -508,15 +469,11 @@ def dashboard_overview():
     )
 
 
-# ---------------------------------------------------------------------
-# SPENDING CATEGORIES (proxy to analytics_service)
-# ---------------------------------------------------------------------
-
 ANALYTICS_BASE_URL = os.environ.get(
     "ANALYTICS_BASE_URL", "http://analytics-service:8080"
 )
 
-import requests  # placed here to avoid circular import issues
+import requests  
 
 @app.route("/api/spend/categories", methods=["GET"])
 def spend_categories():
