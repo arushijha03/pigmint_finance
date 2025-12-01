@@ -1,6 +1,6 @@
 # **PigMint Finance - Group 5**
 
-### Team Members - Arsuhi Jha & Nikitha Konanki Rajeswara Rao
+### Team Members - Arushi Jha & Nikitha Konanki Rajeswara Rao
 
 ### *Smart Micro-Savings, Spending Insights & Financial Recommendations*
 
