@@ -1,4 +1,4 @@
-# PigMint - Smart Savings Application
+# PigMint Finance - Group 5
 
 ### Team Members - Arushi Jha & Nikitha Konanki Rajeswara Rao
 
