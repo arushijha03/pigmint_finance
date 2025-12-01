@@ -1,5 +1,7 @@
 # **PigMint Finance - Group 5**
 
+### Team Members - Arsuhi Jha & Nikitha Konanki Rajeswara Rao
+
 ### *Smart Micro-Savings, Spending Insights & Financial Recommendations*
 
 *A Cloud-Native Distributed System Built on Google Cloud Platform*
