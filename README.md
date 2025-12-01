@@ -1,4 +1,4 @@
-# **PigMint Finance**
+# **PigMint Finance - Group 5**
 
 ### *Smart Micro-Savings, Spending Insights & Financial Recommendations*
 
