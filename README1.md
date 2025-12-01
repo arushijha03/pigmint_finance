@@ -1,5 +1,7 @@
 # PigMint - Smart Savings Application
 
+### Team Members - Arushi Jha & Nikitha Konanki Rajeswara Rao
+
 A personal finance application that helps users save money through automated rules and goal tracking.
 
 ## Project info
